@@ -12,6 +12,8 @@ import edu.berkeley.cs186.database.memory.BufferManager;
 import edu.berkeley.cs186.database.memory.Page;
 import edu.berkeley.cs186.database.table.RecordId;
 
+import javax.xml.crypto.Data;
+
 /**
  * A inner node of a B+ tree. Every inner node in a B+ tree of order d stores
  * between d and 2d keys. An inner node with n keys stores n + 1 "pointers" to
@@ -79,8 +81,11 @@ class InnerNode extends BPlusNode {
     @Override
     public LeafNode get(DataBox key) {
         // TODO(proj2): implement
+<<<<<<< HEAD
 
-        return null;
+=======
+>>>>>>> cee00dfbf3fb50de5163f462f830078bff067f82
+        return getChild(numLessThanEqual(key, keys)).get(key);
     }
 
     // See BPlusNode.getLeftmostLeaf.
@@ -89,16 +94,56 @@ class InnerNode extends BPlusNode {
         assert(children.size() > 0);
         // TODO(proj2): implement
 
-        return null;
+        return getChild(0).getLeftmostLeaf();
     }
 
     // See BPlusNode.put.
     @Override
     public Optional<Pair<DataBox, Long>> put(DataBox key, RecordId rid) {
+<<<<<<< HEAD
         // TODO(proj2): implement
+=======
+        // DONE TODO(proj2): implement
 
-        return Optional.empty();
+        // NOTE!! Breaks test: testNoOverflowPuts
+        // Not sure why??? Works in LeadNode??
+        //  if (keys.contains(key)) {
+        //      throw new BPlusTreeException("Cannot add key because key exists");
+        //  }
+>>>>>>> cee00dfbf3fb50de5163f462f830078bff067f82
+        int ind = numLessThanEqual(key, keys);
+        Optional<Pair<DataBox, Long>> childnode = getChild(ind).put(key, rid);
+
+        Optional<Pair<DataBox, Long>> optional;
+        if (childnode.equals(Optional.empty())) {
+            optional = Optional.empty();
+        } else {
+            keys.add(ind, childnode.get().getFirst());
+            children.add((ind + 1), childnode.get().getSecond());
+
+            if (keys.size() <= metadata.getOrder() * 2) {
+                optional = Optional.empty();
+            } else {
+                List<DataBox> keys2 = new ArrayList<>();
+                List<Long> children2 = new ArrayList<>();
+
+                for (int i =  metadata.getOrder(); i <= ( metadata.getOrder() * 2); i++) {
+                    keys2.add(keys.remove(metadata.getOrder()));
+                    children2.add(children.remove(metadata.getOrder() + 1));
+                }
+
+                DataBox finalKey = keys2.remove(0);
+
+                InnerNode node = new InnerNode(metadata, bufferManager, keys2, children2, treeContext);
+
+                optional = Optional.of(new Pair<DataBox, Long>(finalKey, node.getPage().getPageNum()));
+
+            }
+        }
+        sync();
+        return optional;
     }
+
 
     // See BPlusNode.bulkLoad.
     @Override
@@ -112,9 +157,14 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.remove.
     @Override
     public void remove(DataBox key) {
+<<<<<<< HEAD
         // TODO(proj2): implement
-
-        return;
+        getChild(numLessThan(key, keys)).remove(key);
+=======
+        // DONE TODO(proj2): implement
+        getChild(numLessThanEqual(key, keys)).remove(key);
+>>>>>>> cee00dfbf3fb50de5163f462f830078bff067f82
+        sync();
     }
 
     // Helpers /////////////////////////////////////////////////////////////////
